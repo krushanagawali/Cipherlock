@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a73e8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="CipherLock" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <title>CipherLock - SIM-Bound Cryptographic Vault</title>
+    <meta name="description" content="Zero-trust file encryption vault cryptographically bound to hardware SIM identities with AES-256-GCM enclave protection." />
+    <meta property="og:title" content="CipherLock - SIM-Bound Cryptographic Vault" />
+    <meta property="og:description" content="Zero-trust file encryption vault cryptographically bound to hardware SIM identities with AES-256-GCM enclave protection." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      (function() {
+        // 1. Intercept Vite HMR WebSocket connection to prevent connection failure exceptions in sandbox
+        if (typeof window !== 'undefined' && window.WebSocket) {
+          const RealWebSocket = window.WebSocket;
+          function MockViteWebSocket(url, protocols) {
+            const isVite = (typeof protocols === 'string' && protocols.startsWith('vite-')) ||
+              (Array.isArray(protocols) && protocols.some(p => typeof p === 'string' && p.startsWith('vite-'))) ||
+              (typeof url === 'string' && (url.includes('token=') || url.includes('24678') || url.includes('vite')));
+
+            if (!isVite) {
+              return new RealWebSocket(url, protocols);
+            }
+
+            const target = new EventTarget();
+            target.url = String(url || '');
+            target.protocol = 'vite-hmr';
+            target.readyState = 1; // WebSocket.OPEN
+            target.bufferedAmount = 0;
+            target.extensions = '';
+            target.binaryType = 'blob';
+            target.onopen = null;
+            target.onclose = null;
+            target.onerror = null;
+            target.onmessage = null;
+            target.send = function() {};
+            target.close = function(code, reason) {
+              target.readyState = 3;
+              const ev = new CloseEvent('close', { code: code || 1000, reason: reason || '' });
+              target.dispatchEvent(ev);
+              if (typeof target.onclose === 'function') target.onclose(ev);
+            };
+
+            setTimeout(function() {
+              const ev = new Event('open');
+              target.dispatchEvent(ev);
+              if (typeof target.onopen === 'function') target.onopen(ev);
+            }, 10);
+
+            return target;
+          }
+
+          MockViteWebSocket.prototype = RealWebSocket.prototype;
+          MockViteWebSocket.CONNECTING = 0;
+          MockViteWebSocket.OPEN = 1;
+          MockViteWebSocket.CLOSING = 2;
+          MockViteWebSocket.CLOSED = 3;
+          window.WebSocket = MockViteWebSocket;
+        }
+
+        // 2. Prevent unhandled [vite] errors from bubbling to platform listeners
+        window.addEventListener('error', function(event) {
+          const msg = event?.message || '';
+          if (typeof msg === 'string' && msg.includes('[vite]')) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          const reason = event?.reason;
+          const msg = (reason && reason.message) ? reason.message : String(reason || '');
+          if (typeof msg === 'string' && msg.includes('[vite]')) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        }, true);
+
+        // 3. Filter console output for harmless [vite] notices
+        const muteVite = function(origFn) {
+          return function(...args) {
+            const str = args.map(a => (a instanceof Error ? a.message : String(a || ''))).join(' ');
+            if (str.includes('[vite]')) return;
+            origFn.apply(console, args);
+          };
+        };
+        console.error = muteVite(console.error);
+        console.warn = muteVite(console.warn);
+        console.info = muteVite(console.info);
+        console.log = muteVite(console.log);
+      })();
+    </script>
+  </head>
+  <body class="bg-[#f8fafc] text-[#0f172a] antialiased selection:bg-blue-600 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

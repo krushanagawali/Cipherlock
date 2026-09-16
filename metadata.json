@@ -1,0 +1,6 @@
+{
+  "name": "CipherLock - SIM-Bound Cryptographic Vault",
+  "description": "Zero-trust file encryption vault cryptographically bound to hardware SIM identities with AES-256-GCM enclave protection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

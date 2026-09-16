@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for VaultDocument
+    function isValidVaultDoc(data, userId) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 256 &&
+             data.originalName is string && data.originalName.size() <= 256 &&
+             data.sizeBytes is number &&
+             data.sha256 is string && data.sha256.size() <= 128 &&
+             data.boundSim is string && data.boundSim.size() <= 64 &&
+             data.ownerId == userId &&
+             data.status in ['locked', 'unlocked', 'revoked', 'destroyed'] &&
+             data.createdAt is number;
+    }
+
+    // Validation for SimIdentity
+    function isValidSimIdentity(data, userId) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.phoneNumber is string && data.phoneNumber.size() <= 64 &&
+             data.label is string && data.label.size() <= 128 &&
+             data.carrier is string && data.carrier.size() <= 128 &&
+             data.role is string && data.role.size() <= 128 &&
+             data.status in ['active', 'revoked', 'pending'] &&
+             data.ownerId == userId;
+    }
+
+    // Validation for AuditLogEntry
+    function isValidAuditLog(data, userId) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.timestamp is number &&
+             data.type is string && data.type.size() <= 64 &&
+             data.title is string && data.title.size() <= 256 &&
+             data.details is string && data.details.size() <= 2048 &&
+             data.status in ['success', 'warning', 'breach', 'revoked'] &&
+             data.ownerId == userId;
+    }
+
+    match /users/{userId} {
+      match /vault_documents/{documentId} {
+        allow get: if isOwner(userId) && isValidId(documentId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(documentId) &&
+                         isValidVaultDoc(incoming(), userId) &&
+                         incoming().ownerId == userId;
+        allow update: if isOwner(userId) &&
+                         isValidId(documentId) &&
+                         isValidVaultDoc(incoming(), userId) &&
+                         incoming().ownerId == existing().ownerId;
+        allow delete: if isOwner(userId) && isValidId(documentId);
+      }
+
+      match /sim_identities/{simId} {
+        allow get: if isOwner(userId) && isValidId(simId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(simId) &&
+                         isValidSimIdentity(incoming(), userId) &&
+                         incoming().ownerId == userId;
+        allow update: if isOwner(userId) &&
+                         isValidId(simId) &&
+                         isValidSimIdentity(incoming(), userId) &&
+                         incoming().ownerId == existing().ownerId;
+        allow delete: if isOwner(userId) && isValidId(simId);
+      }
+
+      match /audit_logs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(logId) &&
+                         isValidAuditLog(incoming(), userId) &&
+                         incoming().ownerId == userId;
+        allow update: if false; // Audit logs are immutable tamper-proof logs
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "VaultDocument": {
+      "title": "VaultDocument",
+      "description": "Encrypted cryptographic capsule metadata and payload bound to hardware SIM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "originalName": { "type": "string", "maxLength": 256 },
+        "sizeBytes": { "type": "number" },
+        "mimeType": { "type": "string", "maxLength": 128 },
+        "sha256": { "type": "string", "maxLength": 128 },
+        "boundSim": { "type": "string", "maxLength": 64 },
+        "boundSimLabel": { "type": "string", "maxLength": 128 },
+        "bindingRigor": { "type": "string", "enum": ["strict", "relaxed"] },
+        "status": { "type": "string", "enum": ["locked", "unlocked", "revoked", "destroyed"] },
+        "decryptionsCount": { "type": "number" },
+        "algorithm": { "type": "string", "maxLength": 64 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "number" },
+        "rawContainerJson": { "type": "string", "maxLength": 5000000 }
+      },
+      "required": ["id", "name", "originalName", "sizeBytes", "sha256", "boundSim", "ownerId", "createdAt", "status"]
+    },
+    "SimIdentity": {
+      "title": "SimIdentity",
+      "description": "Hardware SIM anchor and cellular identity card registered to the vault",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "phoneNumber": { "type": "string", "maxLength": 64 },
+        "label": { "type": "string", "maxLength": 128 },
+        "carrier": { "type": "string", "maxLength": 128 },
+        "imsiHash": { "type": "string", "maxLength": 128 },
+        "deviceModel": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "maxLength": 128 },
+        "isOwner": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "revoked", "pending"] },
+        "decryptionsCount": { "type": "number" },
+        "enclaveType": { "type": "string", "maxLength": 128 },
+        "ownerId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "phoneNumber", "label", "carrier", "role", "status", "ownerId"]
+    },
+    "AuditLogEntry": {
+      "title": "AuditLogEntry",
+      "description": "Real-time tamper, access, and cryptographic event audit log record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "number" },
+        "type": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 256 },
+        "details": { "type": "string", "maxLength": 2048 },
+        "simNumber": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["success", "warning", "breach", "revoked"] },
+        "ipAddress": { "type": "string", "maxLength": 64 },
+        "enclaveHash": { "type": "string", "maxLength": 128 },
+        "ownerId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "timestamp", "type", "title", "details", "status", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/vault_documents/{documentId}": {
+      "schema": "VaultDocument",
+      "description": "User's encrypted capsules sealed to specific hardware SIMs"
+    },
+    "/users/{userId}/sim_identities/{simId}": {
+      "schema": "SimIdentity",
+      "description": "User's authorized cellular SIM identities and public cryptographic anchors"
+    },
+    "/users/{userId}/audit_logs/{logId}": {
+      "schema": "AuditLogEntry",
+      "description": "Tamper events, decryption challenges, and audit log entries for the user"
+    }
+  }
+}
